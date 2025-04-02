@@ -1,4 +1,8 @@
-# lab1
+# 我的6.5940之旅
+
+我的工作在master中
+
+## lab1
 
 - 将 input file 分成 M 个task文件
 - task_request 请求任务
@@ -14,13 +18,13 @@
         - mapoutputpath: path+"/map" mapoutputfile: mapoutputpath+"/map-out-uid-r.txt
         - reducepath: path+"/reduce" reducefile: reducepath+"/mr-out-r
 
-# lab2
+## lab2
 
-## kv
+### kv
 - server
 - client
 
-## lock
+### lock
 - 使用kv服务器实现外部锁
 - get put 原子操作实现锁的获取和释放
 - 加入退避策略，减小竞争强度
