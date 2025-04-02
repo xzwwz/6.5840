@@ -15,6 +15,8 @@ type end struct {
 // Servers are named by ServerName() and clerks lazily make a
 // per-clerk ClientEnd to a server.  Each clerk has a Clnt with a map
 // of the allocated ends for this clerk.
+// 服务器通过 ServerName() 命名，客户端（clerk）按需为每个服务器创建专属的 ClientEnd。
+// 每个客户端（clerk）持有一个 Clnt 结构体，其中通过映射（map）管理该客户端分配的所有端点（end）。
 type Clnt struct {
 	mu   sync.Mutex
 	net  *labrpc.Network

@@ -1,13 +1,15 @@
 package kvsrv
 
 import (
+	"sync"
+
 	"6.5840/kvsrv1/rpc"
-	"6.5840/kvtest1"
-	"6.5840/tester1"
+	kvtest "6.5840/kvtest1"
+	tester "6.5840/tester1"
 )
 
-
 type Clerk struct {
+	mu     sync.Mutex
 	clnt   *tester.Clnt
 	server string
 }
@@ -29,8 +31,26 @@ func MakeClerk(clnt *tester.Clnt, server string) kvtest.IKVClerk {
 // must match the declared types of the RPC handler function's
 // arguments. Additionally, reply must be passed as a pointer.
 func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
+	ck.mu.Lock()
+	defer ck.mu.Unlock()
 	// You will have to modify this function.
-	return "", 0, rpc.ErrNoKey
+	args := rpc.GetArgs{Key: key}
+	reply := rpc.GetReply{}
+
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Get", &args, &reply)
+		if !ok {
+			// fmt.Println("RPC failed")
+			continue
+		}
+		if reply.Err == rpc.OK {
+			return reply.Value, reply.Version, rpc.OK
+		} else if reply.Err == rpc.ErrNoKey {
+			return "", 0, rpc.ErrNoKey
+		} else {
+			continue
+		}
+	}
 }
 
 // Put updates key with value only if the version in the
@@ -51,6 +71,35 @@ func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
 // must match the declared types of the RPC handler function's
 // arguments. Additionally, reply must be passed as a pointer.
 func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
+	// ck.mu.Lock()
+	// ck.mu.Unlock()
 	// You will have to modify this function.
-	return rpc.ErrNoKey
+	args := rpc.PutArgs{Key: key, Value: value, Version: version}
+	reply := rpc.PutReply{}
+
+	maxretries := 3
+
+	for i := 0; i < maxretries; i++ {
+		ok := ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply)
+
+		if !ok {
+			continue
+		}
+
+		switch reply.Err {
+		case rpc.OK:
+			return rpc.OK
+		case rpc.ErrVersion:
+			if i == 0 {
+				return rpc.ErrVersion
+			} else {
+				return rpc.ErrMaybe
+			}
+		default:
+			return reply.Err
+		}
+
+	}
+
+	return rpc.ErrNetwork
 }
