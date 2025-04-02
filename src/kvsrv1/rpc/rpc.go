@@ -7,6 +7,7 @@ const (
 	OK         = "OK"
 	ErrNoKey   = "ErrNoKey"
 	ErrVersion = "ErrVersion"
+	ErrNetwork = "ErrNetwork"
 
 	// Err returned by Clerk only
 	ErrMaybe = "ErrMaybe"
@@ -37,4 +38,3 @@ type GetReply struct {
 	Version Tversion
 	Err     Err
 }
-
