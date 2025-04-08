@@ -332,6 +332,12 @@ func (rf *Raft) startElection() {
 			}
 			reply := RequestVoteReply{}
 			for {
+				rf.mu.RLock()
+				if rf.state != 1 {
+					rf.mu.RUnlock()
+					return
+				}
+				rf.mu.RUnlock()
 				fmt.Printf("node: %v send request vote to node  %v in term %v\n", rf.me, server, term)
 				ok := rf.sendRequestVote(server, &args, &reply)
 				if ok {
@@ -445,6 +451,13 @@ func (rf *Raft) sendHeartbeat(ctx context.Context) {
 						LeaderId: leaderId,
 					}
 					reply := AppendEntriesReply{}
+
+					rf.mu.RLock()
+					if rf.state != 1 {
+						rf.mu.RUnlock()
+						return
+					}
+					rf.mu.RUnlock()
 					fmt.Printf("node %v send append to node %v with term %v\n", rf.me, server, term)
 					ok := rf.sendAppendEntries(server, &args, &reply)
 					if !ok {

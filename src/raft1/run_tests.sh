@@ -1,20 +1,20 @@
 #!/bin/bash
 
 # 测试次数
-TEST_COUNT=300
+TEST_COUNT=1500
 # 成功计数器
 SUCCESS=0
 # 失败计数器
 FAIL=0
 
-echo "开始执行 $TEST_COUNT 次测试: go test -run TestManyElections3A"
+echo "开始执行 $TEST_COUNT 次测试: go test -run 3A"
 
 for ((i=1; i<=$TEST_COUNT; i++))
 do
     echo -n "第 $i 次测试... "
     
     # 执行测试并捕获输出
-    output=$(go test -run TestManyElections3A -race 2>&1)
+    output=$(go test -run 3A -race 2>&1)
     result=$?
     
     if [ $result -eq 0 ]; then
