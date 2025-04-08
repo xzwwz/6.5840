@@ -10,6 +10,7 @@ import (
 	//	"bytes"
 
 	"context"
+	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -245,7 +246,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 func (rf *Raft) convertToFollower(term int) {
 	// rf.mu.Lock()
-	// fmt.Printf("node: %v convert to follower\n", rf.me)
+	fmt.Printf("node: %v convert to follower\n", rf.me)
 	rf.state = 0
 	rf.currentTerm = term
 	rf.lastHeartbeat = time.Now()
@@ -255,13 +256,13 @@ func (rf *Raft) convertToFollower(term int) {
 }
 
 func (rf *Raft) runAsFollower() {
-	// fmt.Printf("node: %v run as follower\n", rf.me)
+	fmt.Printf("node: %v run as follower in term %v\n", rf.me, rf.currentTerm)
 	<-rf.stateCh
 }
 
 func (rf *Raft) convertToCanditate() {
 	// rf.mu.Lock()
-	// fmt.Printf("node: %v convert to candidate\n", rf.me)
+	fmt.Printf("node: %v convert to candidate\n", rf.me)
 	rf.state = 1
 	rf.currentTerm += 1
 	rf.electionTimeout = GetRandomElectionTimeout()
@@ -272,14 +273,14 @@ func (rf *Raft) convertToCanditate() {
 }
 
 func (rf *Raft) runAsCandidate() {
-	// fmt.Printf("node: %v run as candidate\n", rf.me)
+	fmt.Printf("node: %v run as candidate in term %v\n", rf.me, rf.currentTerm)
 	go rf.startElection()
 	<-rf.stateCh
 }
 
 func (rf *Raft) convertToLeader() {
 	// rf.mu.Lock()
-	// fmt.Printf("node: %v convert to leader\n", rf.me)
+	fmt.Printf("node: %v convert to leader\n", rf.me)
 	rf.state = 2
 	rf.stateCh <- struct{}{}
 	// rf.mu.Unlock()
@@ -287,7 +288,7 @@ func (rf *Raft) convertToLeader() {
 }
 
 func (rf *Raft) runAsLeader() {
-	// fmt.Printf("node: %v run as leader\n", rf.me)
+	fmt.Printf("node: %v run as leader in term %v\n", rf.me, rf.currentTerm)
 	// 定时发送 心跳包
 	ctx, cancel := context.WithCancel(context.Background())
 	go rf.sendHeartbeat(ctx)
@@ -331,19 +332,19 @@ func (rf *Raft) startElection() {
 			}
 			reply := RequestVoteReply{}
 			for {
-				<-time.After(REQUESTVOTEINTERVAL)
-				// fmt.Printf("node: %v send request vote to node  %v\n", rf.me, server)
+				fmt.Printf("node: %v send request vote to node  %v in term %v\n", rf.me, server, term)
 				ok := rf.sendRequestVote(server, &args, &reply)
 				if ok {
 					break
 				}
+				<-time.After(REQUESTVOTEINTERVAL)
 			}
 			// fmt.Printf("node: %v send request vote to node  %v\n", rf.me, server)
 
 			// fmt.Printf("node: %v read lock\n", rf.me)
 			rf.mu.Lock()
 			// defer rf.mu.Unlock()
-			// fmt.Printf("node: %v receive request vote reply from node  %v : VoteGranted : %v , reply term : %v\n", rf.me, server, reply.VoteGranted, reply.Term)
+			fmt.Printf("node: %v receive request vote reply from node  %v : VoteGranted : %v , reply term : %v\n", rf.me, server, reply.VoteGranted, reply.Term)
 			if reply.Term > rf.currentTerm {
 				rf.convertToFollower(reply.Term)
 				rf.mu.Unlock()
@@ -390,7 +391,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	// 如果prevLogIndex 的Log 的Term 不等于 prevLogTerm，return false
 	// fmt.Printf("node: %v read lock\n", rf.me)
-	// fmt.Printf("node %v recive append from node %v , term : %v \n", rf.me, args.LeaderId, args.Term)
+	fmt.Printf("node %v recive append from node %v , term : %v \n", rf.me, args.LeaderId, args.Term)
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	if args.Term < rf.currentTerm {
@@ -444,7 +445,7 @@ func (rf *Raft) sendHeartbeat(ctx context.Context) {
 						LeaderId: leaderId,
 					}
 					reply := AppendEntriesReply{}
-					// fmt.Printf("node %v send append to node %v \n", rf.me, server)
+					fmt.Printf("node %v send append to node %v with term %v\n", rf.me, server, term)
 					ok := rf.sendAppendEntries(server, &args, &reply)
 					if !ok {
 						return

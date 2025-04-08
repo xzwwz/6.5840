@@ -332,12 +332,12 @@ func (rf *Raft) startElection() {
 			}
 			reply := RequestVoteReply{}
 			for {
-				<-time.After(REQUESTVOTEINTERVAL)
 				fmt.Printf("node: %v send request vote to node  %v in term %v\n", rf.me, server, term)
 				ok := rf.sendRequestVote(server, &args, &reply)
 				if ok {
 					break
 				}
+				<-time.After(REQUESTVOTEINTERVAL)
 			}
 			// fmt.Printf("node: %v send request vote to node  %v\n", rf.me, server)
 
