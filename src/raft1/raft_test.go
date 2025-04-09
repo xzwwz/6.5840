@@ -24,6 +24,23 @@ import (
 // (much more than the paper's range of timeouts).
 const RaftElectionTimeout = 1000 * time.Millisecond
 
+func TestMy3A(t *testing.T) {
+	servers := 3
+	ts := makeTest(t, servers, true, false)
+	defer ts.cleanup()
+
+	tester.AnnotateTest("TestInitialElection3A", servers)
+	ts.Begin("Test (3A): initial election")
+
+	// is a leader elected?
+	leader1 := ts.checkOneLeader()
+
+	// if the leader disconnects, a new one should be elected.
+	ts.g.DisconnectAll(leader1)
+	DPrintf(" node %v disconnect", leader1)
+	time.Sleep(2 * RaftElectionTimeout)
+
+}
 func TestInitialElection3A(t *testing.T) {
 	servers := 3
 	ts := makeTest(t, servers, true, false)
@@ -66,6 +83,7 @@ func TestReElection3A(t *testing.T) {
 
 	// if the leader disconnects, a new one should be elected.
 	ts.g.DisconnectAll(leader1)
+	DPrintf(" node %v disconnect", leader1)
 	tester.AnnotateConnection(ts.g.GetConnected())
 	ts.checkOneLeader()
 
@@ -73,6 +91,7 @@ func TestReElection3A(t *testing.T) {
 	// disturb the new leader. and the old leader
 	// should switch to follower.
 	ts.g.ConnectOne(leader1)
+	DPrintf(" node %v connect", leader1)
 	tester.AnnotateConnection(ts.g.GetConnected())
 	leader2 := ts.checkOneLeader()
 
@@ -80,6 +99,8 @@ func TestReElection3A(t *testing.T) {
 	// be elected.
 	ts.g.DisconnectAll(leader2)
 	ts.g.DisconnectAll((leader2 + 1) % servers)
+	DPrintf(" node %v disconnect", leader2)
+	DPrintf(" node %v disconnect", (leader2+1)%servers)
 
 	tester.AnnotateConnection(ts.g.GetConnected())
 	time.Sleep(2 * RaftElectionTimeout)
@@ -118,6 +139,7 @@ func TestManyElections3A(t *testing.T) {
 		ts.g.DisconnectAll(i1)
 		ts.g.DisconnectAll(i2)
 		ts.g.DisconnectAll(i3)
+		DPrintf(" node %v %v %v disconnect", i1, i2, i3)
 		tester.AnnotateConnection(ts.g.GetConnected())
 
 		// either the current leader should still be alive,
@@ -127,6 +149,7 @@ func TestManyElections3A(t *testing.T) {
 		ts.g.ConnectOne(i1)
 		ts.g.ConnectOne(i2)
 		ts.g.ConnectOne(i3)
+		DPrintf(" node %v %v %v connect", i1, i2, i3)
 		tester.AnnotateConnection(ts.g.GetConnected())
 	}
 	ts.checkOneLeader()
