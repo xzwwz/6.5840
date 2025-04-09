@@ -24,23 +24,23 @@ import (
 // (much more than the paper's range of timeouts).
 const RaftElectionTimeout = 1000 * time.Millisecond
 
-func TestMy3A(t *testing.T) {
-	servers := 3
-	ts := makeTest(t, servers, true, false)
-	defer ts.cleanup()
+// func TestMy3A(t *testing.T) {
+// 	servers := 3
+// 	ts := makeTest(t, servers, true, false)
+// 	defer ts.cleanup()
 
-	tester.AnnotateTest("TestInitialElection3A", servers)
-	ts.Begin("Test (3A): initial election")
+// 	tester.AnnotateTest("TestInitialElection3A", servers)
+// 	ts.Begin("Test (3A): initial election")
 
-	// is a leader elected?
-	leader1 := ts.checkOneLeader()
+// 	// is a leader elected?
+// 	leader1 := ts.checkOneLeader()
 
-	// if the leader disconnects, a new one should be elected.
-	ts.g.DisconnectAll(leader1)
-	DPrintf(" node %v disconnect", leader1)
-	time.Sleep(2 * RaftElectionTimeout)
+// 	// if the leader disconnects, a new one should be elected.
+// 	ts.g.DisconnectAll(leader1)
+// 	DPrintf(" node %v disconnect", leader1)
+// 	time.Sleep(2 * RaftElectionTimeout)
 
-}
+// }
 func TestInitialElection3A(t *testing.T) {
 	servers := 3
 	ts := makeTest(t, servers, true, false)

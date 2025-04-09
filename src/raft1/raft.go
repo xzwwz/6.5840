@@ -240,18 +240,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 // that the caller passes the address of the reply struct with &, not
 // the struct itself.
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
-	for {
-		select {
-		case <-time.After(SENDTIMEOUT):
-			return false
-		default:
-			ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
-			if ok {
-				return ok
-			}
-		}
+	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
+	return ok
 
-	}
 }
 
 func (rf *Raft) startElection() {
@@ -371,18 +362,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
-	for {
-		select {
-		case <-time.After(SENDTIMEOUT):
-			return false
-		default:
-			ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
-			if ok {
-				return ok
-			}
-		}
-
-	}
+	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
+	return ok
 }
 
 func (rf *Raft) sendHeartbeat() {
@@ -391,15 +372,15 @@ func (rf *Raft) sendHeartbeat() {
 	leaderId := rf.me
 	DPrintf("node %v start send heartbeats with term %v \n", rf.me, term)
 	rf.mu.Unlock()
+	for {
+		// var wg sync.WaitGroup
+		for p := range rf.peers {
+			if p == rf.me {
+				continue
+			}
+			// DPrintf("node %v start goroutine to send to node %v \n ", leaderId, p)
+			go func(server int, term int, leaderId int) {
 
-	// var wg sync.WaitGroup
-	for p := range rf.peers {
-		if p == rf.me {
-			continue
-		}
-		// DPrintf("node %v start goroutine to send to node %v \n ", leaderId, p)
-		go func(server int, term int, leaderId int) {
-			for {
 				// DPrintf("node %v goroutine to send to node %v before lock\n ", leaderId, p)
 				rf.mu.Lock()
 				// DPrintf("node %v goroutine to send to node %v  lock\n ", leaderId, p)
@@ -422,7 +403,7 @@ func (rf *Raft) sendHeartbeat() {
 				ok := rf.sendAppendEntries(server, &args, &reply)
 				if !ok {
 					DPrintf("node %v send append to node %v with term %v fail \n", rf.me, server, term)
-					continue
+					return
 				}
 				DPrintf("node %v send append to node %v with term before lock%v\n ", rf.me, server, term)
 				rf.mu.Lock()
@@ -436,9 +417,11 @@ func (rf *Raft) sendHeartbeat() {
 					rf.convertToFollower(reply.Term)
 				}
 				rf.mu.Unlock()
-				<-time.After(HEARTBEATINTERVAL)
-			}
-		}(p, term, leaderId)
+
+			}(p, term, leaderId)
+
+		}
+		<-time.After(HEARTBEATINTERVAL)
 	}
 	// wg.Wait()
 }
