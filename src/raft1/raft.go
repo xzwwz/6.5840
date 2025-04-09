@@ -272,21 +272,17 @@ func (rf *Raft) startElection() {
 				// LastLogTerm:  lastLogTerm,
 			}
 			reply := RequestVoteReply{}
-			times := 3
-			for times > 0 {
-				rf.mu.Lock()
-				if rf.state != 1 || rf.currentTerm != term {
-					rf.mu.Unlock()
-					return
-				}
-				DPrintf("node: %v send request vote to node  %v in term %v\n", rf.me, server, term)
+
+			rf.mu.Lock()
+			if rf.state != 1 || rf.currentTerm != term {
 				rf.mu.Unlock()
-				ok := rf.sendRequestVote(server, &args, &reply)
-				if ok {
-					break
-				}
-				times -= 1
-				<-time.After(REQUESTVOTEINTERVAL)
+				return
+			}
+			DPrintf("node: %v send request vote to node  %v in term %v\n", rf.me, server, term)
+			rf.mu.Unlock()
+			ok := rf.sendRequestVote(server, &args, &reply)
+			if !ok {
+				return
 			}
 			// DPrintf("node: %v send request vote to node  %v\n", rf.me, server)
 
@@ -301,7 +297,6 @@ func (rf *Raft) startElection() {
 				return
 			}
 			if reply.VoteGranted && reply.Term == rf.currentTerm && rf.state == 1 {
-
 				atomic.AddInt32(&numOfVote, 1)
 				DPrintf("node: %v get %v vote \n", rf.me, numOfVote)
 				if int(numOfVote) > len(rf.peers)/2 {

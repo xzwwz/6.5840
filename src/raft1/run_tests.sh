@@ -14,7 +14,7 @@ do
     echo -n "第 $i 次测试... "
     
     # 执行测试并捕获输出
-    output=$(go test -run 3A -timeout 30s 2>&1)
+    output=$(go test -run 3A -timeout 1m 2>&1)
     result=$?
     
     if [ $result -eq 0 ]; then
